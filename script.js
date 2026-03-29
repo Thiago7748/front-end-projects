@@ -89,34 +89,37 @@ document.addEventListener('DOMContentLoaded', () => {
     
     rows.forEach((row, index) => {
       let isDown = false;
-      let isHovered = false; // Tracker via JS para evitar bug do Safari
+      let isHovered = false; 
       let startX;
       let scrollLeft;
       
-      // Auto Scroll Setup (Usando pixels por segundo)
-      let speedPXPerSecond = index === 0 ? 15 : 20; 
-      let moveDir = index === 0 ? 1 : -1;
+      // Setup de Velocidade Uniforme e Suave (Aumentado base para nao dar impressao de 'carroça/demora')
+      let speedPXPerSecond = index === 0 ? 30 : 35; 
+      let moveDir = 1; // As duas começam fluindo p/ direita para n buggar o limite inicial (scrollLeft = 0)
       
-      if (index !== 0) {
-         moveDir = 1; // Força inicio c/ direção padrao
-      }
-      
-      let exactScroll = row.scrollLeft; 
-      let lastTime = performance.now();
+      let exactScroll = 0; 
+      let lastTime = null;
       let pauseUntil = 0; 
 
       const playAutoScroll = (currentTime) => {
-        if (!currentTime) currentTime = performance.now();
-        const deltaTime = currentTime - lastTime;
+        if (!lastTime) lastTime = currentTime;
+        let deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // Pausar auto-scroll durante interação ou inércia
+        // Impede pulos monstruosos se a tab ficar em background (max 50ms = 20fps cap p/ calculo)
+        if (deltaTime > 50) deltaTime = 50; 
+
+        // Se está livre (sem toque, mouse ou inércia pendente)
         if (!isDown && !isHovered && currentTime > pauseUntil) {
           const walk = (speedPXPerSecond * (deltaTime / 1000)) * moveDir;
           exactScroll += walk;
-          row.scrollLeft = Math.round(exactScroll);
           
-          if (row.scrollLeft >= (row.scrollWidth - row.clientWidth - 1)) {
+          // Omitindo Math.round! Chrome renderiza sub-pixels (suavidade impecável). 
+          // iOS visualmente descarta mas o "exactScroll" não perde nada!
+          row.scrollLeft = exactScroll; 
+          
+          // Bounce (com margem de 1.5px de proteção p/ evitar travamento)
+          if (row.scrollLeft >= (row.scrollWidth - row.clientWidth - 1.5)) {
             moveDir = -1;
             exactScroll = row.scrollLeft;
           } else if (row.scrollLeft <= 0) {
@@ -124,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             exactScroll = 0;
           }
         } else {
+          // Mantém perfeitamente equalizado pro JS nao tentar voltar a imagens anteriores quando o usuario soltar
           exactScroll = row.scrollLeft;
         }
         window.requestAnimationFrame(playAutoScroll);
@@ -131,56 +135,48 @@ document.addEventListener('DOMContentLoaded', () => {
       
       window.requestAnimationFrame(playAutoScroll);
 
-      // --- Eventos de Mouse (Desktop) ---
-      row.addEventListener('mouseenter', () => isHovered = true);
-      
-      row.addEventListener('mousedown', (e) => {
+      // --- Eventos Híbridos (Mouses reias no Desktop evitam conflitos do Safari) ---
+      // IMPORTANTE: pointerenter só define hover se for mouse fisicamente, o Safari simula mouse ao tocar, isso ignora.
+      row.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') isHovered = true;
+      });
+      row.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'mouse') isHovered = false;
+        isDown = false;
+        row.classList.remove('active');
+        pauseUntil = performance.now() + 1000;
+      });
+
+      // --- Eventos de Interação Mista ---
+      row.addEventListener('pointerdown', (e) => {
         isDown = true;
         row.classList.add('active');
         startX = e.pageX - row.offsetLeft;
         scrollLeft = row.scrollLeft;
       });
-      row.addEventListener('mouseleave', () => {
-        isDown = false;
-        isHovered = false;
-        row.classList.remove('active');
-        exactScroll = row.scrollLeft;
-        pauseUntil = performance.now() + 1000;
-      });
-      row.addEventListener('mouseup', () => {
+      row.addEventListener('pointerup', () => {
         isDown = false;
         row.classList.remove('active');
-        exactScroll = row.scrollLeft;
-        pauseUntil = performance.now() + 1000;
+        pauseUntil = performance.now() + 1500; // Tempo de inércia para todas as plataformas
       });
-      row.addEventListener('mousemove', (e) => {
+      row.addEventListener('pointercancel', () => {
+        isDown = false;
+        row.classList.remove('active');
+        pauseUntil = performance.now() + 1500;
+      });
+      row.addEventListener('pointermove', (e) => {
         if (!isDown) return;
-        e.preventDefault(); 
+        // Evitar prevenir default em touch, senao bloqueia zoom/scroll de aba? Nao, pointermove p/ drag e safe
+        if (e.pointerType === 'mouse') e.preventDefault(); 
+        
         const x = e.pageX - row.offsetLeft;
         const walk = (x - startX) * 2; 
         row.scrollLeft = scrollLeft - walk;
         exactScroll = row.scrollLeft;
       });
 
-      // --- Eventos de Touch (Mobile/iOS & Android) ---
-      row.addEventListener('touchstart', () => {
-        isDown = true;
-        isHovered = false; // Safari Force Reset "Sticky Hover"
-      }, { passive: true });
-      
-      row.addEventListener('touchend', () => {
-        isDown = false;
-        isHovered = false; // Safari Force Reset "Sticky Hover"
-        exactScroll = row.scrollLeft;
-        pauseUntil = performance.now() + 1500; 
-      });
-
-      row.addEventListener('touchcancel', () => {
-        isDown = false;
-        isHovered = false;
-        exactScroll = row.scrollLeft;
-        pauseUntil = performance.now() + 1500;
-      });
+      // --- Eventos de Touch dedicados apenas para segurança do pause de inércia Apple ---
+      row.addEventListener('touchstart', () => { isDown = true; }, { passive: true });
     });
   }
 
