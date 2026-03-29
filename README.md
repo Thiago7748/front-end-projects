@@ -2,7 +2,7 @@
 
 Bem-vindo ao repositório oficial da **PRY BRAIDS**! Uma Single Page Application (SPA) sofisticada, concebida para refletir a verdadeira essência da cultura urbana e do lifestyle Hip-Hop através da arte das tranças. 
 
-![Favicon/Capa](assets/images/favicon.svg)
+<img width="939" height="447" alt="Captura de tela 2026-03-29 193258" src="https://github.com/user-attachments/assets/ba120a45-af35-4d3a-9f8b-ea5d08c01e88" />
 
 ## ✨ Funcionalidades (Features)
 
