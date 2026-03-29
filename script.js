@@ -89,28 +89,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     rows.forEach((row, index) => {
       let isDown = false;
+      let isHovered = false; // Tracker via JS para evitar bug do Safari
       let startX;
       let scrollLeft;
       
-      // Auto Scroll Setup (Usando pixels por segundo ao invés de p/ frame para garantir 60fps==120fps)
+      // Auto Scroll Setup (Usando pixels por segundo)
       let speedPXPerSecond = index === 0 ? 15 : 20; 
       let moveDir = index === 0 ? 1 : -1;
       
       if (index !== 0) {
-         moveDir = 1;
+         moveDir = 1; // Força inicio c/ direção padrao
       }
       
       let exactScroll = row.scrollLeft; 
       let lastTime = performance.now();
-      let pauseUntil = 0; // Proteção essencial para a inércia suave do iOS Safari não brigar com JS
+      let pauseUntil = 0; 
 
       const playAutoScroll = (currentTime) => {
         if (!currentTime) currentTime = performance.now();
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // Pausar auto-scroll durante interação ou enquanto o pause de inércia estiver ativo
-        if (!isDown && !row.matches(':hover') && !row.matches(':active') && currentTime > pauseUntil) {
+        // Pausar auto-scroll durante interação ou inércia
+        if (!isDown && !isHovered && currentTime > pauseUntil) {
           const walk = (speedPXPerSecond * (deltaTime / 1000)) * moveDir;
           exactScroll += walk;
           row.scrollLeft = Math.round(exactScroll);
@@ -123,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
             exactScroll = 0;
           }
         } else {
-          // Mantém sincronizado para evitar "pulo" no momento que o JS retomar controle
           exactScroll = row.scrollLeft;
         }
         window.requestAnimationFrame(playAutoScroll);
@@ -132,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
       window.requestAnimationFrame(playAutoScroll);
 
       // --- Eventos de Mouse (Desktop) ---
+      row.addEventListener('mouseenter', () => isHovered = true);
+      
       row.addEventListener('mousedown', (e) => {
         isDown = true;
         row.classList.add('active');
@@ -140,9 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       row.addEventListener('mouseleave', () => {
         isDown = false;
+        isHovered = false;
         row.classList.remove('active');
         exactScroll = row.scrollLeft;
-        pauseUntil = performance.now() + 1000; // Desktop precisa de menos tempo de desengate
+        pauseUntil = performance.now() + 1000;
       });
       row.addEventListener('mouseup', () => {
         isDown = false;
@@ -162,17 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
       // --- Eventos de Touch (Mobile/iOS & Android) ---
       row.addEventListener('touchstart', () => {
         isDown = true;
+        isHovered = false; // Safari Force Reset "Sticky Hover"
       }, { passive: true });
       
       row.addEventListener('touchend', () => {
         isDown = false;
+        isHovered = false; // Safari Force Reset "Sticky Hover"
         exactScroll = row.scrollLeft;
-        // Tempo mágico: Permite o momentum/inércia nativo de iPhones e Androids rolar por ~1.5s antes do JS assumir
         pauseUntil = performance.now() + 1500; 
       });
 
       row.addEventListener('touchcancel', () => {
         isDown = false;
+        isHovered = false;
         exactScroll = row.scrollLeft;
         pauseUntil = performance.now() + 1500;
       });
