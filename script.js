@@ -92,24 +92,29 @@ document.addEventListener('DOMContentLoaded', () => {
       let startX;
       let scrollLeft;
       
-      // Auto Scroll Setup
-      let speed = index === 0 ? 0.25 : 0.35; // Velocidade bem mais lenta e suave
+      // Auto Scroll Setup (Usando pixels por segundo ao invés de p/ frame para garantir 60fps==120fps)
+      let speedPXPerSecond = index === 0 ? 15 : 20; 
       let moveDir = index === 0 ? 1 : -1;
       
       if (index !== 0) {
          moveDir = 1;
       }
       
-      let exactScroll = row.scrollLeft; // Tracker preciso para resolver iOS Safari truncando float
+      let exactScroll = row.scrollLeft; 
+      let lastTime = performance.now();
+      let pauseUntil = 0; // Proteção essencial para a inércia suave do iOS Safari não brigar com JS
 
-      const playAutoScroll = () => {
-        // Pausar auto-scroll durante interação (mouse hover, touch, ou clique ativo)
-        if (!isDown && !row.matches(':hover') && !row.matches(':active')) {
-          exactScroll += (speed * moveDir);
+      const playAutoScroll = (currentTime) => {
+        if (!currentTime) currentTime = performance.now();
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // Pausar auto-scroll durante interação ou enquanto o pause de inércia estiver ativo
+        if (!isDown && !row.matches(':hover') && !row.matches(':active') && currentTime > pauseUntil) {
+          const walk = (speedPXPerSecond * (deltaTime / 1000)) * moveDir;
+          exactScroll += walk;
           row.scrollLeft = Math.round(exactScroll);
           
-          // Reverte direção ao bater nos extremos
-          // Uma margem segura de 1px ajuda evitar stucks
           if (row.scrollLeft >= (row.scrollWidth - row.clientWidth - 1)) {
             moveDir = -1;
             exactScroll = row.scrollLeft;
@@ -118,13 +123,12 @@ document.addEventListener('DOMContentLoaded', () => {
             exactScroll = 0;
           }
         } else {
-          // Sincronizar watcher interno com o usuário arrastando via scroll nativo/mouse
+          // Mantém sincronizado para evitar "pulo" no momento que o JS retomar controle
           exactScroll = row.scrollLeft;
         }
         window.requestAnimationFrame(playAutoScroll);
       };
       
-      // Inicia auto-scroll
       window.requestAnimationFrame(playAutoScroll);
 
       // --- Eventos de Mouse (Desktop) ---
@@ -138,11 +142,13 @@ document.addEventListener('DOMContentLoaded', () => {
         isDown = false;
         row.classList.remove('active');
         exactScroll = row.scrollLeft;
+        pauseUntil = performance.now() + 1000; // Desktop precisa de menos tempo de desengate
       });
       row.addEventListener('mouseup', () => {
         isDown = false;
         row.classList.remove('active');
         exactScroll = row.scrollLeft;
+        pauseUntil = performance.now() + 1000;
       });
       row.addEventListener('mousemove', (e) => {
         if (!isDown) return;
@@ -153,8 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exactScroll = row.scrollLeft;
       });
 
-      // --- Eventos de Touch (Mobile/iOS) ---
-      // Imprescindível para o auto-scroll saber que o usuário está tocando na tela
+      // --- Eventos de Touch (Mobile/iOS & Android) ---
       row.addEventListener('touchstart', () => {
         isDown = true;
       }, { passive: true });
@@ -162,6 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
       row.addEventListener('touchend', () => {
         isDown = false;
         exactScroll = row.scrollLeft;
+        // Tempo mágico: Permite o momentum/inércia nativo de iPhones e Androids rolar por ~1.5s antes do JS assumir
+        pauseUntil = performance.now() + 1500; 
+      });
+
+      row.addEventListener('touchcancel', () => {
+        isDown = false;
+        exactScroll = row.scrollLeft;
+        pauseUntil = performance.now() + 1500;
       });
     });
   }
