@@ -1,0 +1,21 @@
+#contact {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.contact-card {
+  background: var(--bg-card);
+  padding: 60px 40px;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  p {
+    margin-bottom: 40px;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+}

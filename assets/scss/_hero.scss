@@ -1,0 +1,40 @@
+#hero {
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+}
+
+.hero-content {
+  max-width: 600px;
+  z-index: 2;
+
+  h1 {
+    font-family: var(--font-heading);
+    font-size: 5rem;
+    line-height: 1.05;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    letter-spacing: -1px;
+  }
+
+  p {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    margin-bottom: 35px;
+    max-width: 450px;
+  }
+}
+
+.hero-image {
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-45%);
+  width: 40%;
+  max-width: 550px;
+  height: 75vh;
+  object-fit: cover;
+  border-radius: 12px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}

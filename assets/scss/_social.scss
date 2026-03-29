@@ -1,0 +1,42 @@
+// Ícones de redes sociais no header
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.social-icon {
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px; // Touch area base (total ~38px)
+  border-radius: 50%;
+
+  &:hover {
+    color: var(--accent);
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  // Mobile hit target 44px
+  @media (max-width: 600px) {
+    padding: 11px; // Aumentar área para toque (total ~44px)
+    gap: 10px;
+  }
+}
+
+// Botão WhatsApp com ícone
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background-color: #25D366;
+
+  &:hover {
+    background-color: #1da851;
+    box-shadow: 0 10px 20px rgba(37, 211, 102, 0.25);
+  }
+}
