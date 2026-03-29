@@ -93,33 +93,41 @@ document.addEventListener('DOMContentLoaded', () => {
       let scrollLeft;
       
       // Auto Scroll Setup
-      let speed = index === 0 ? 0.4 : 0.6; // Linhas com velocidades levemente diferentes
-      let moveDir = index === 0 ? 1 : -1; // Top vai = / Bottom pode começar diferente mas logo ajusta
+      let speed = index === 0 ? 0.6 : 0.8; // Velocidade ajustada para fluidez
+      let moveDir = index === 0 ? 1 : -1;
       
-      // Forçar scroll start dependendo da direcao default
       if (index !== 0) {
-         // Pequeno delay pra bottom ir pro fim e voltar? Melhor deixar as duas começarem normal mas em velocidades diferentes
          moveDir = 1;
       }
       
+      let exactScroll = row.scrollLeft; // Tracker preciso para resolver iOS Safari truncando float
+
       const playAutoScroll = () => {
-        // Pausar se o utilizador estiver focando ou interagindo
-        if (!isDown && !row.matches(':hover')) {
-          row.style.scrollSnapType = 'none'; // Desligar snap enquanto auto-scrolla para nao travar
-          row.scrollLeft += (speed * moveDir);
+        // Pausar auto-scroll durante interação (mouse hover, touch, ou clique ativo)
+        if (!isDown && !row.matches(':hover') && !row.matches(':active')) {
+          exactScroll += (speed * moveDir);
+          row.scrollLeft = Math.round(exactScroll);
           
           // Reverte direção ao bater nos extremos
+          // Uma margem segura de 1px ajuda evitar stucks
           if (row.scrollLeft >= (row.scrollWidth - row.clientWidth - 1)) {
             moveDir = -1;
+            exactScroll = row.scrollLeft;
           } else if (row.scrollLeft <= 0) {
             moveDir = 1;
+            exactScroll = 0;
           }
+        } else {
+          // Sincronizar watcher interno com o usuário arrastando via scroll nativo/mouse
+          exactScroll = row.scrollLeft;
         }
         window.requestAnimationFrame(playAutoScroll);
       };
+      
       // Inicia auto-scroll
       window.requestAnimationFrame(playAutoScroll);
 
+      // --- Eventos de Mouse (Desktop) ---
       row.addEventListener('mousedown', (e) => {
         isDown = true;
         row.classList.add('active');
@@ -129,20 +137,31 @@ document.addEventListener('DOMContentLoaded', () => {
       row.addEventListener('mouseleave', () => {
         isDown = false;
         row.classList.remove('active');
-        row.style.scrollSnapType = 'x mandatory'; 
+        exactScroll = row.scrollLeft;
       });
       row.addEventListener('mouseup', () => {
         isDown = false;
         row.classList.remove('active');
-        row.style.scrollSnapType = 'x mandatory'; 
+        exactScroll = row.scrollLeft;
       });
       row.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault(); 
-        row.style.scrollSnapType = 'none'; 
         const x = e.pageX - row.offsetLeft;
         const walk = (x - startX) * 2; 
         row.scrollLeft = scrollLeft - walk;
+        exactScroll = row.scrollLeft;
+      });
+
+      // --- Eventos de Touch (Mobile/iOS) ---
+      // Imprescindível para o auto-scroll saber que o usuário está tocando na tela
+      row.addEventListener('touchstart', () => {
+        isDown = true;
+      }, { passive: true });
+      
+      row.addEventListener('touchend', () => {
+        isDown = false;
+        exactScroll = row.scrollLeft;
       });
     });
   }

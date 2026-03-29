@@ -258,9 +258,8 @@ nav a:hover, nav a.active {
   gap: 20px;
   width: 100%;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
   padding: 0 4%;
+  -webkit-overflow-scrolling: touch;
   /* Fallback hide scrollbar */
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
@@ -272,7 +271,6 @@ nav a:hover, nav a.active {
 .gallery-item {
   flex: 0 0 auto;
   width: 280px;
-  scroll-snap-align: start;
   position: relative;
   overflow: hidden;
   border-radius: 12px;
@@ -334,7 +332,6 @@ nav a:hover, nav a.active {
 @media (max-width: 480px) {
   .gallery-item {
     width: 75vw;
-    scroll-snap-align: center;
   }
   .gallery-row {
     padding: 0 5%;
