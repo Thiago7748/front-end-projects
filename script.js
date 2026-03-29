@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let scrollLeft;
       
       // Auto Scroll Setup
-      let speed = index === 0 ? 0.6 : 0.8; // Velocidade ajustada para fluidez
+      let speed = index === 0 ? 0.25 : 0.35; // Velocidade bem mais lenta e suave
       let moveDir = index === 0 ? 1 : -1;
       
       if (index !== 0) {
